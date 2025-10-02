@@ -108,6 +108,10 @@ function init() {
   connectSocket();
   adjustCanvasSize();
   drawBoard();
+  window.requestAnimationFrame(() => {
+    adjustCanvasSize();
+    drawBoard();
+  });
 }
 
 function ensureDisplayName() {
@@ -140,10 +144,16 @@ function wireEvents() {
     drawBoard();
   });
 
-  window.addEventListener('resize', () => {
+  const handleResize = () => {
     adjustCanvasSize();
     drawBoard();
-  });
+  };
+
+  window.addEventListener('resize', handleResize);
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', handleResize);
+  }
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && state.selection) {
@@ -642,14 +652,38 @@ function locateCell(event) {
 
 function adjustCanvasSize() {
   const canvas = elements.boardCanvas;
-  const parentWidth = canvas.parentElement.clientWidth;
-  const size = Math.min(parentWidth - 10, 640);
+  if (!canvas) {
+    return;
+  }
+
+  const parent = canvas.parentElement;
+  const fallbackWidth = canvas.clientWidth || 320;
+  const parentWidth = parent ? parent.clientWidth : 0;
+  const measuredWidth = canvas.getBoundingClientRect().width || fallbackWidth;
+  const baseWidth = parentWidth > 0 ? parentWidth : measuredWidth;
+  let size = Math.min(baseWidth - 12, 640);
+  if (!Number.isFinite(size) || size <= 0) {
+    size = Math.min(baseWidth || 320, 320);
+  }
+
+  if (window.innerWidth <= 640) {
+    const viewportHeight = (window.visualViewport && window.visualViewport.height) || window.innerHeight || size;
+    const reservedForPanels = Math.min(Math.max(viewportHeight * 0.38, 220), 360);
+    const availableHeight = viewportHeight - reservedForPanels - 56;
+    const mobileLimit = Math.max(220, Math.min(availableHeight, viewportHeight * 0.46));
+    size = Math.min(size, mobileLimit);
+  }
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.maxWidth = '100%';
   canvas.style.width = `${size}px`;
   canvas.style.height = `${size}px`;
-  const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.floor(size * dpr);
-  canvas.height = Math.floor(size * dpr);
+  canvas.width = Math.max(1, Math.floor(size * dpr));
+  canvas.height = Math.max(1, Math.floor(size * dpr));
 }
+
+
+
 
 function drawBoard() {
   const canvas = elements.boardCanvas;
@@ -866,3 +900,5 @@ function countPlacedStones(board) {
 }
 
 init();
+
+

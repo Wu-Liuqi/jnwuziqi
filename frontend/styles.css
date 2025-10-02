@@ -85,6 +85,7 @@ body {
   display: grid;
   grid-template-columns: minmax(300px, 2.1fr) minmax(240px, 1fr);
   gap: 24px;
+  align-items: start;
 }
 
 .board-section {
@@ -374,20 +375,105 @@ button:hover {
 
 @media (max-width: 640px) {
   .app-shell {
-    padding: 18px;
+    padding: 16px 12px 28px;
+    min-height: 100dvh;
   }
 
   .app-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
+  }
+
+  .app-header h1 {
+    font-size: 1.9rem;
   }
 
   .room-share {
     align-self: stretch;
     justify-content: space-between;
+    padding: 8px 12px;
+  }
+
+  .app-main {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: calc(100dvh - 64px);
+  }
+
+  .sidebar {
+    display: contents;
+  }
+
+  .board-section {
+    grid-area: board;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
   }
 
   #board-canvas {
-    height: 400px;
+    width: min(100%, 88vw);
+    height: auto;
+    max-height: 42dvh;
+    aspect-ratio: 1 / 1;
+  }
+
+  .board-controls {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .skills-panel {
+    grid-area: skills;
+    padding: 14px;
+    max-height: 36dvh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .skill-grid {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .info-panel {
+    grid-area: info;
+    padding: 14px;
+  }
+
+  .player-status {
+    grid-area: players;
+    padding: 14px;
+  }
+
+  .skill-card {
+    padding: 10px;
+    gap: 4px;
+  }
+
+  .skill-card .skill-name {
+    font-size: 0.9rem;
+  }
+
+  .skill-card .cooldown {
+    font-size: 0.75rem;
+  }
+
+  .skill-card .status-tag {
+    font-size: 0.68rem;
   }
 }
+
+
+
+
