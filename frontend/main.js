@@ -85,7 +85,10 @@ const elements = {
   modalTitle: document.getElementById('modal-title'),
   modalBody: document.getElementById('modal-body'),
   modalClose: document.getElementById('modal-close'),
-  toast: document.getElementById('toast')
+  toast: document.getElementById('toast'),
+  mobilePanelTabs: document.querySelector('.mobile-panel-tabs'),
+  mobilePanelButtons: Array.from(document.querySelectorAll('.panel-tab[data-panel-target]')),
+  mobilePanels: Array.from(document.querySelectorAll('.mobile-panel[data-panel]'))
 };
 
 const state = {
@@ -99,12 +102,15 @@ const state = {
   selection: null,
   hoverCell: null,
   pingTimer: null,
-  toastTimer: null
+  toastTimer: null,
+  activeMobilePanel: null,
+  resizeObserver: null
 };
 
 function init() {
   state.displayName = ensureDisplayName();
   wireEvents();
+  setupMobilePanels();
   connectSocket();
   adjustCanvasSize();
   drawBoard();
@@ -137,12 +143,35 @@ function wireEvents() {
     }
   });
 
-  elements.boardCanvas.addEventListener('click', handleBoardClick);
-  elements.boardCanvas.addEventListener('mousemove', handleBoardHover);
-  elements.boardCanvas.addEventListener('mouseleave', () => {
-    state.hoverCell = null;
-    drawBoard();
-  });
+  const canvas = elements.boardCanvas;
+  if (canvas) {
+    canvas.addEventListener('click', handleBoardClick);
+
+    const supportsPointer = typeof window.PointerEvent === 'function';
+    if (supportsPointer) {
+      canvas.addEventListener('pointermove', handleBoardHover, { passive: true });
+      canvas.addEventListener('pointerdown', handleBoardHover);
+      canvas.addEventListener('pointerleave', clearHoverCell);
+    } else {
+      canvas.addEventListener('mousemove', handleBoardHover);
+      canvas.addEventListener('mouseleave', clearHoverCell);
+      canvas.addEventListener('touchstart', handleBoardHover, { passive: true });
+      canvas.addEventListener('touchmove', handleBoardHover, { passive: true });
+      canvas.addEventListener('touchend', clearHoverCell, { passive: true });
+      canvas.addEventListener('touchcancel', clearHoverCell, { passive: true });
+    }
+
+    if (window.ResizeObserver && canvas.parentElement) {
+      if (state.resizeObserver) {
+        state.resizeObserver.disconnect();
+      }
+      state.resizeObserver = new ResizeObserver(() => {
+        adjustCanvasSize();
+        drawBoard();
+      });
+      state.resizeObserver.observe(canvas.parentElement);
+    }
+  }
 
   const handleResize = () => {
     adjustCanvasSize();
@@ -157,9 +186,88 @@ function wireEvents() {
 
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && state.selection) {
-      cancelSelection('已取消技能目标选择');
+      cancelSelection('取消当前技能目标选择');
     }
   });
+}
+
+function setupMobilePanels() {
+  const buttons = elements.mobilePanelButtons;
+  const panels = elements.mobilePanels;
+  if (!Array.isArray(buttons) || buttons.length === 0 || !Array.isArray(panels) || panels.length === 0) {
+    return;
+  }
+
+  const fallback = panels[0]?.dataset?.panel || 'info';
+  let preferred = fallback;
+
+  try {
+    const stored = localStorage.getItem('skills-mobile-panel-active');
+    if (stored && panels.some((panel) => panel.dataset.panel === stored)) {
+      preferred = stored;
+    }
+  } catch (err) {
+    console.warn('无法读取面板偏好', err);
+  }
+
+  const mediaQuery = window.matchMedia('(max-width: 640px)');
+
+  const apply = (panelId, options = {}) => {
+    const { skipPersist = false } = options;
+    const resolved = panels.some((panel) => panel.dataset.panel === panelId) ? panelId : fallback;
+    const isDesktop = !mediaQuery.matches;
+
+    panels.forEach((panel) => {
+      const active = isDesktop || panel.dataset.panel === resolved;
+      panel.classList.toggle('is-active', active);
+      if (isDesktop) {
+        panel.removeAttribute('aria-hidden');
+      } else {
+        panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+      }
+    });
+
+    buttons.forEach((button) => {
+      const isActive = button.dataset.panelTarget === resolved;
+      button.classList.toggle('active', isActive);
+      button.setAttribute('aria-selected', String(isActive));
+      button.setAttribute('aria-pressed', String(isActive));
+      button.tabIndex = isActive ? 0 : -1;
+    });
+
+    state.activeMobilePanel = resolved;
+
+    if (!skipPersist) {
+      try {
+        localStorage.setItem('skills-mobile-panel-active', resolved);
+      } catch (err) {
+        console.warn('无法保存面板偏好', err);
+      }
+    }
+
+    adjustCanvasSize();
+    drawBoard();
+  };
+
+  const setActive = (panelId, options) => {
+    apply(panelId, options);
+  };
+
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => setActive(button.dataset.panelTarget));
+  });
+
+  const handleMediaChange = () => {
+    apply(state.activeMobilePanel || preferred, { skipPersist: true });
+  };
+
+  if (typeof mediaQuery.addEventListener === 'function') {
+    mediaQuery.addEventListener('change', handleMediaChange);
+  } else if (typeof mediaQuery.addListener === 'function') {
+    mediaQuery.addListener(handleMediaChange);
+  }
+
+  setActive(preferred, { skipPersist: true });
 }
 
 function connectSocket() {
@@ -623,6 +731,12 @@ function handleSelectionClick(cell) {
 }
 
 function handleBoardHover(event) {
+  if (event?.touches && event.touches.length > 1) {
+    return;
+  }
+  if (typeof event?.isPrimary === 'boolean' && event.isPrimary === false) {
+    return;
+  }
   const cell = locateCell(event);
   const changed = (state.hoverCell?.x !== cell?.x) || (state.hoverCell?.y !== cell?.y);
   if (changed) {
@@ -631,12 +745,53 @@ function handleBoardHover(event) {
   }
 }
 
+function clearHoverCell() {
+  if (!state.hoverCell) {
+    return;
+  }
+  state.hoverCell = null;
+  drawBoard();
+}
+
+
+function getInputPoint(event) {
+  if (!event) {
+    return null;
+  }
+  if (event.touches && event.touches.length > 0) {
+    return event.touches[0];
+  }
+  if (event.changedTouches && event.changedTouches.length > 0) {
+    return event.changedTouches[0];
+  }
+  if (typeof event.clientX === 'number' && typeof event.clientY === 'number') {
+    return event;
+  }
+  return null;
+}
+
 function locateCell(event) {
-  const rect = elements.boardCanvas.getBoundingClientRect();
+  const canvas = elements.boardCanvas;
+  if (!canvas) {
+    return null;
+  }
+  const point = getInputPoint(event);
+  if (!point) {
+    return null;
+  }
+  const rect = canvas.getBoundingClientRect();
   const size = rect.width;
+  if (!Number.isFinite(size) || size <= 0) {
+    return null;
+  }
   const gap = (size - BOARD_PADDING * 2) / (BOARD_SIZE - 1);
-  const x = ((event.clientX - rect.left) - BOARD_PADDING) / gap;
-  const y = ((event.clientY - rect.top) - BOARD_PADDING) / gap;
+  if (!Number.isFinite(gap) || gap <= 0) {
+    return null;
+  }
+  const relativeX = (point.clientX - rect.left) - BOARD_PADDING;
+  const relativeY = (point.clientY - rect.top) - BOARD_PADDING;
+  const x = relativeX / gap;
+  const y = relativeY / gap;
   const gridX = Math.round(x);
   const gridY = Math.round(y);
   if (gridX < 0 || gridX >= BOARD_SIZE || gridY < 0 || gridY >= BOARD_SIZE) {
@@ -660,19 +815,23 @@ function adjustCanvasSize() {
   const fallbackWidth = canvas.clientWidth || 320;
   const parentWidth = parent ? parent.clientWidth : 0;
   const measuredWidth = canvas.getBoundingClientRect().width || fallbackWidth;
-  const baseWidth = parentWidth > 0 ? parentWidth : measuredWidth;
-  let size = Math.min(baseWidth - 12, 640);
+  const baseWidth = Math.max(220, parentWidth > 0 ? parentWidth : measuredWidth);
+  let size = Math.min(baseWidth, 640);
+
   if (!Number.isFinite(size) || size <= 0) {
-    size = Math.min(baseWidth || 320, 320);
+    size = Math.min(Math.max(baseWidth, 220), 320);
   }
 
-  if (window.innerWidth <= 640) {
+  const isCompact = window.innerWidth <= 720;
+  if (isCompact) {
     const viewportHeight = (window.visualViewport && window.visualViewport.height) || window.innerHeight || size;
-    const reservedForPanels = Math.min(Math.max(viewportHeight * 0.38, 220), 360);
-    const availableHeight = viewportHeight - reservedForPanels - 56;
-    const mobileLimit = Math.max(220, Math.min(availableHeight, viewportHeight * 0.46));
+    const reservedForPanels = Math.min(Math.max(viewportHeight * 0.4, 240), 380);
+    const availableHeight = viewportHeight - reservedForPanels - 72;
+    const mobileLimit = Math.max(220, Math.min(availableHeight, viewportHeight * 0.62));
     size = Math.min(size, mobileLimit);
   }
+
+  size = Math.max(220, size);
 
   const dpr = window.devicePixelRatio || 1;
   canvas.style.maxWidth = '100%';
