@@ -86,6 +86,7 @@ const elements = {
   modalBody: document.getElementById('modal-body'),
   modalClose: document.getElementById('modal-close'),
   toast: document.getElementById('toast'),
+  effectOverlay: document.getElementById('effect-overlay'),
   mobilePanelTabs: document.querySelector('.mobile-panel-tabs'),
   mobilePanelButtons: Array.from(document.querySelectorAll('.panel-tab[data-panel-target]')),
   mobilePanels: Array.from(document.querySelectorAll('.mobile-panel[data-panel]'))
@@ -372,7 +373,20 @@ function applyGameState(gameState) {
   if (!gameState) {
     return;
   }
+  
+  const previousGame = state.game;
   state.game = gameState;
+
+  // 检查是否有获胜者（新的获胜）
+  if (gameState.winner && (!previousGame || !previousGame.winner)) {
+    EffectManager.createVictoryEffect(gameState.winner);
+  }
+
+  // 检查是否有新的棋子放置
+  if (gameState.lastPlacement && previousGame) {
+    const { x, y } = gameState.lastPlacement;
+    EffectManager.createParticles(x, y, gameState.currentTurn === 'black' ? '#333' : '#fff', 4);
+  }
 
   if (state.selection) {
     const skillId = state.selection.skill.id;
@@ -600,6 +614,8 @@ function handleSkillClick(skill) {
 
   const meta = SKILL_META[skill.id];
   if (!meta) {
+    // 触发技能特效
+    EffectManager.createSkillEffect(skill.id);
     sendMessage('skill', { skillId: skill.id });
     return;
   }
@@ -618,6 +634,8 @@ function handleSkillClick(skill) {
       showToast('请输入合法的回合号', 'warning');
       return;
     }
+    // 触发技能特效
+    EffectManager.createSkillEffect(skill.id);
     sendMessage('skill', { skillId: skill.id, data: { turnNumber: parsed } });
     return;
   }
@@ -627,6 +645,8 @@ function handleSkillClick(skill) {
     return;
   }
 
+  // 触发技能特效
+  EffectManager.createSkillEffect(skill.id);
   sendMessage('skill', { skillId: skill.id });
 }
 
@@ -719,6 +739,11 @@ function handleSelectionClick(cell) {
   }
 
   if (selection.targets.length > 0 && (!selection.meta.maxTargets || selection.targets.length === selection.meta.maxTargets)) {
+    // 在每个目标位置创建特效
+    selection.targets.forEach(target => {
+      EffectManager.createSkillEffect(selection.skill.id, target.x, target.y);
+    });
+    
     sendMessage('skill', {
       skillId: selection.skill.id,
       data: { positions: selection.targets }
@@ -1057,6 +1082,303 @@ function countPlacedStones(board) {
   }
   return count;
 }
+
+// 移动设备检测
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+         window.innerWidth <= 768 ||
+         ('ontouchstart' in window);
+}
+
+// 特效管理器
+const EffectManager = {
+  // 创建技能特效
+  createSkillEffect(skillId, x = null, y = null) {
+    // 获取技能名称
+    const skillNames = {
+      'flying-sand': '飞沙走石',
+      'yale-ya': '呀嘞呀',
+      'calm-water': '静如止水',
+      'capture': '擒拿擒拿',
+      'rewind': '时光倒流',
+      'reset-board': '力拔山兮',
+      'restore': '东山再起',
+      'see-you-again': 'See you again'
+    };
+    
+    const skillName = skillNames[skillId] || skillId;
+    
+    // 创建飞字特效
+    this.createSkillFlyText(skillName, x, y);
+    
+    // 创建原有的特效
+    const effect = document.createElement('div');
+    effect.className = `skill-effect ${skillId}`;
+    
+    // 如果提供了坐标，在该位置显示特效
+    if (x !== null && y !== null) {
+      const canvas = elements.boardCanvas;
+      const rect = canvas.getBoundingClientRect();
+      const size = rect.width;
+      const gap = (size - BOARD_PADDING * 2) / (BOARD_SIZE - 1);
+      const pixelX = rect.left + BOARD_PADDING + x * gap;
+      const pixelY = rect.top + BOARD_PADDING + y * gap;
+      
+      effect.style.left = `${pixelX - 25}px`;
+      effect.style.top = `${pixelY - 25}px`;
+      effect.style.width = '50px';
+      effect.style.height = '50px';
+    } else {
+      // 在屏幕中央显示
+      effect.style.left = '50%';
+      effect.style.top = '50%';
+      effect.style.transform = 'translate(-50%, -50%)';
+      effect.style.width = '100px';
+      effect.style.height = '100px';
+    }
+    
+    elements.effectOverlay.appendChild(effect);
+    
+    // 800ms后移除特效
+    setTimeout(() => {
+      if (effect.parentNode) {
+        effect.parentNode.removeChild(effect);
+      }
+    }, 800);
+  },
+
+  // 创建技能飞字特效
+  createSkillFlyText(skillName, x = null, y = null) {
+    const flyText = document.createElement('div');
+    flyText.className = 'skill-fly-text';
+    flyText.textContent = skillName;
+    
+    let startX, startY;
+    
+    // 如果提供了棋盘坐标，从该位置开始
+    if (x !== null && y !== null) {
+      const canvas = elements.boardCanvas;
+      const rect = canvas.getBoundingClientRect();
+      const size = rect.width;
+      const gap = (size - BOARD_PADDING * 2) / (BOARD_SIZE - 1);
+      startX = rect.left + BOARD_PADDING + x * gap;
+      startY = rect.top + BOARD_PADDING + y * gap;
+    } else {
+      // 从屏幕中心开始，考虑移动端视口
+      const viewportWidth = window.innerWidth || document.documentElement.clientWidth;
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      startX = viewportWidth / 2;
+      startY = viewportHeight / 2;
+    }
+    
+    // 确保起始位置在视口内
+    startX = Math.max(50, Math.min(startX, (window.innerWidth || 320) - 50));
+    startY = Math.max(50, Math.min(startY, (window.innerHeight || 568) - 50));
+    
+    flyText.style.left = startX + 'px';
+    flyText.style.top = startY + 'px';
+    
+    elements.effectOverlay.appendChild(flyText);
+    
+    // 触发动画
+    requestAnimationFrame(() => {
+      flyText.classList.add('animate');
+    });
+    
+    // 动画结束后移除元素
+    setTimeout(() => {
+      if (flyText.parentNode) {
+        flyText.parentNode.removeChild(flyText);
+      }
+    }, 2000);
+  },
+
+  // 创建获胜特效
+  createVictoryEffect(winner) {
+    const winnerName = state.game?.players?.[winner]?.displayName || (winner === 'black' ? '子琪' : '张呈');
+    
+    // 创建获胜弹窗
+    this.createVictoryModal(winner, winnerName);
+    
+    // 背景闪光
+    const victoryBg = document.createElement('div');
+    victoryBg.className = 'victory-effect';
+    elements.effectOverlay.appendChild(victoryBg);
+    
+    // 烟花特效（移动端延迟启动以避免性能问题）
+    const delay = isMobileDevice() ? 300 : 0;
+    setTimeout(() => {
+      this.createFireworks();
+    }, delay);
+    
+    // 震动效果（移动端支持触觉反馈）
+    if (isMobileDevice() && navigator.vibrate) {
+      navigator.vibrate([200, 100, 200]);
+    }
+    document.body.classList.add('shake-effect');
+    
+    setTimeout(() => {
+      if (victoryBg.parentNode) {
+        victoryBg.parentNode.removeChild(victoryBg);
+      }
+      document.body.classList.remove('shake-effect');
+    }, 2000);
+  },
+
+  // 创建获胜弹窗
+  createVictoryModal(winner, winnerName) {
+    const modal = document.createElement('div');
+    modal.className = 'victory-modal';
+    
+    const winnerText = winner === 'black' ? '黑棋获胜' : '白棋获胜';
+    const winnerEmoji = winner === 'black' ? '⚫' : '⚪';
+    
+    modal.innerHTML = `
+      <div class="victory-content">
+        <div class="victory-crown">${winnerEmoji}</div>
+        <h2 class="victory-title">🎉 游戏结束 🎉</h2>
+        <p class="victory-winner">${winnerText}</p>
+        <div class="victory-celebration">
+          🎊 🎉 🎊 🎉 🎊
+        </div>
+        <div class="victory-stats">
+          <div class="stat-item">
+            <span class="stat-label">回合数</span>
+            <span class="stat-value">${state.game?.turnNumber || 0}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">步数</span>
+            <span class="stat-value">${countPlacedStones(state.game?.board)}</span>
+          </div>
+        </div>
+        <button class="victory-close">
+          确定
+        </button>
+      </div>
+    `;
+    
+    elements.effectOverlay.appendChild(modal);
+    
+    // 添加点击事件监听器
+    const closeButton = modal.querySelector('.victory-close');
+    closeButton.addEventListener('click', () => {
+      this.closeVictoryModal();
+    });
+    
+    // 触发动画
+    requestAnimationFrame(() => {
+      modal.classList.add('show');
+    });
+  },
+
+  // 关闭获胜弹窗
+  closeVictoryModal() {
+    const modal = elements.effectOverlay.querySelector('.victory-modal');
+    if (modal) {
+      modal.classList.add('hide');
+      setTimeout(() => {
+        if (modal.parentNode) {
+          modal.parentNode.removeChild(modal);
+        }
+      }, 300);
+    }
+  },
+
+  // 创建烟花特效
+  createFireworks() {
+    const colors = ['gold', 'red', 'blue', 'green'];
+    const isMobile = window.innerWidth <= 768;
+    
+    // 移动端减少烟花数量和位置
+    const positions = isMobile ? [
+      { x: '25%', y: '35%' },
+      { x: '75%', y: '30%' },
+      { x: '50%', y: '25%' }
+    ] : [
+      { x: '20%', y: '30%' },
+      { x: '80%', y: '25%' },
+      { x: '15%', y: '70%' },
+      { x: '85%', y: '65%' },
+      { x: '50%', y: '20%' }
+    ];
+
+    const fireworkCount = isMobile ? 6 : 8;
+    const maxDistance = isMobile ? 35 : 50;
+
+    positions.forEach((pos, index) => {
+      setTimeout(() => {
+        for (let i = 0; i < fireworkCount; i++) {
+          const firework = document.createElement('div');
+          firework.className = `firework ${colors[Math.floor(Math.random() * colors.length)]}`;
+          firework.style.left = pos.x;
+          firework.style.top = pos.y;
+          
+          // 随机方向，移动端距离更小
+          const angle = (i * (360 / fireworkCount)) * Math.PI / 180;
+          const distance = (maxDistance * 0.7) + Math.random() * (maxDistance * 0.3);
+          firework.style.setProperty('--dx', `${Math.cos(angle) * distance}px`);
+          firework.style.setProperty('--dy', `${Math.sin(angle) * distance}px`);
+          
+          elements.effectOverlay.appendChild(firework);
+          
+          setTimeout(() => {
+            if (firework.parentNode) {
+              firework.parentNode.removeChild(firework);
+            }
+          }, 1500);
+        }
+      }, index * 200);
+    });
+  },
+
+  // 创建粒子特效
+  createParticles(x, y, color = '#ffd700', count = 6) {
+    const canvas = elements.boardCanvas;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const size = rect.width;
+    const gap = (size - BOARD_PADDING * 2) / (BOARD_SIZE - 1);
+    const pixelX = rect.left + BOARD_PADDING + x * gap;
+    const pixelY = rect.top + BOARD_PADDING + y * gap;
+
+    // 移动端减少粒子数量
+    const isMobile = window.innerWidth <= 768;
+    const particleCount = isMobile ? Math.max(3, Math.floor(count * 0.6)) : count;
+    const spreadRange = isMobile ? 15 : 20;
+
+    for (let i = 0; i < particleCount; i++) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.backgroundColor = color;
+      
+      // 确保粒子位置在视口内
+      const offsetX = (Math.random() - 0.5) * spreadRange;
+      const offsetY = (Math.random() - 0.5) * spreadRange;
+      const finalX = Math.max(5, Math.min(pixelX + offsetX, window.innerWidth - 5));
+      const finalY = Math.max(5, Math.min(pixelY + offsetY, window.innerHeight - 5));
+      
+      particle.style.left = `${finalX}px`;
+      particle.style.top = `${finalY}px`;
+      
+      elements.effectOverlay.appendChild(particle);
+      
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, 2000);
+    }
+  },
+
+  // 闪光特效
+  flashEffect(element) {
+    element.classList.add('flash-effect');
+    setTimeout(() => {
+      element.classList.remove('flash-effect');
+    }, 300);
+  }
+};
 
 init();
 
