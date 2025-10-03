@@ -1,24 +1,24 @@
 ﻿:root {
-  color-scheme: dark;
-  --bg-gradient-1: #101936;
-  --bg-gradient-2: #273469;
-  --bg-gradient-3: #1e2a4a;
-  --surface-primary: rgba(14, 19, 35, 0.86);
-  --surface-secondary: rgba(21, 30, 56, 0.72);
-  --surface-elevated: rgba(15, 21, 39, 0.94);
-  --surface-soft: rgba(255, 255, 255, 0.08);
-  --surface-strong: rgba(255, 255, 255, 0.12);
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --accent: #4d9dff;
-  --accent-strong: #6799ff;
-  --accent-soft: rgba(93, 148, 255, 0.18);
-  --text-primary: #f6f7fb;
-  --text-secondary: #aab4d4;
-  --text-muted: rgba(255, 255, 255, 0.6);
-  --danger: #ff4d6d;
-  --warning: #ffb84d;
-  --success: #48e39f;
-  --shadow-soft: 0 18px 45px rgba(6, 10, 22, 0.45);
+  color-scheme: light;
+  --bg-gradient-1: #667eea;
+  --bg-gradient-2: #764ba2;
+  --bg-gradient-3: #f093fb;
+  --surface-primary: rgba(255, 255, 255, 0.9);
+  --surface-secondary: rgba(255, 255, 255, 0.8);
+  --surface-elevated: rgba(255, 255, 255, 0.95);
+  --surface-soft: rgba(255, 255, 255, 0.6);
+  --surface-strong: rgba(255, 255, 255, 0.8);
+  --panel-border: rgba(255, 255, 255, 0.3);
+  --accent: #ff6b6b;
+  --accent-strong: #ff5252;
+  --accent-soft: rgba(255, 107, 107, 0.2);
+  --text-primary: #2c3e50;
+  --text-secondary: #34495e;
+  --text-muted: rgba(44, 62, 80, 0.7);
+  --danger: #e74c3c;
+  --warning: #f39c12;
+  --success: #2ecc71;
+  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.1);
   font-family: 'Segoe UI', 'PingFang SC', 'Microsoft Yahei', sans-serif;
 }
 
@@ -30,8 +30,10 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--text-primary);
-  background: #0c1222;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .background-animation {
@@ -47,9 +49,11 @@ body {
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -112,19 +116,20 @@ body {
 
 button {
   font: inherit;
-  color: inherit;
+  color: white;
   background: var(--accent);
   border: none;
   border-radius: 12px;
   padding: 10px 18px;
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
-  box-shadow: 0 10px 20px rgba(50, 100, 255, 0.25);
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
 }
 
 button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 16px 32px rgba(50, 100, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+  background: var(--accent-strong);
 }
 
 button:active {
@@ -133,14 +138,15 @@ button:active {
 }
 
 button.secondary {
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: none;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   color: var(--text-primary);
 }
 
 button.secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
 }
 
 .game-summary {
@@ -174,12 +180,12 @@ button.secondary:hover {
 
 .turn-banner {
   padding: clamp(12px, 1.8vw, 16px) clamp(16px, 2.4vw, 22px);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #101428;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: var(--text-primary);
   font-weight: 600;
-  box-shadow: 0 20px 38px rgba(10, 14, 32, 0.35);
+  box-shadow: var(--shadow-soft);
 }
 
 .turn-banner p {
@@ -190,20 +196,21 @@ button.secondary:hover {
 .players-banner {
   display: flex;
   justify-content: center;
-  gap: clamp(16px, 3vw, 32px);
+  align-items: center;
+  gap: clamp(8px, 2vw, 16px);
 }
 
 .player-card {
   position: relative;
   flex: 1 1 0;
   min-width: 0;
-  padding: 18px 20px;
+  padding: 12px 16px;
   background: var(--surface-secondary);
-  border-radius: 18px;
+  border-radius: 12px;
   border: 1px solid var(--panel-border);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   box-shadow: var(--shadow-soft);
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
@@ -218,10 +225,10 @@ button.secondary:hover {
 }
 
 .player-card .stone {
-  width: 42px;
-  height: 42px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  box-shadow: inset 0 8px 16px rgba(0, 0, 0, 0.35), inset 0 -4px 8px rgba(255, 255, 255, 0.25);
+  box-shadow: inset 0 6px 12px rgba(0, 0, 0, 0.35), inset 0 -3px 6px rgba(255, 255, 255, 0.25);
 }
 
 .stone.black {
@@ -240,7 +247,7 @@ button.secondary:hover {
 
 .player-card .name {
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: 0.9rem;
 }
 
 .player-card .turn-indicator {
@@ -271,7 +278,7 @@ button.secondary:hover {
 }
 
 .board-section {
-  width: min(600px, 92vw);
+  width: 100%;
   padding: clamp(16px, 2.8vw, 26px);
   border-radius: 22px;
   background: var(--surface-elevated);
@@ -283,13 +290,29 @@ button.secondary:hover {
   gap: 18px;
 }
 
+@media (max-width: 720px) {
+  .board-section {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 460px) {
+  .board-section {
+    width: 100%;
+    max-width: none;
+    padding: 8px;
+  }
+}
+
 #board-canvas {
   width: 100%;
   height: auto;
   aspect-ratio: 1 / 1;
+  max-width: 100%;
   border-radius: 18px;
-  background: linear-gradient(135deg, #f0d9b5, #d8b387);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08), inset 0 8px 24px rgba(0, 0, 0, 0.24);
+  background: linear-gradient(135deg, #ffeaa7, #fdcb6e);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1), inset 0 4px 12px rgba(0, 0, 0, 0.1);
   touch-action: manipulation;
   user-select: none;
 }
@@ -336,18 +359,69 @@ button.secondary:hover {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+/* 确保技能卡片在小屏幕上的可见性 */
+@media (max-width: 480px) {
+  .skill-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .skill-grid::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .skill-grid::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+  }
+
+  .skill-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+  }
+
+  .skill-card {
+    height: 50px;
+    padding: 4px;
+    font-size: 0.5rem;
+  }
+
+  .skill-card .skill-name {
+    font-size: 0.5rem;
+  }
+
+  .skill-card .cooldown {
+    font-size: 0.45rem;
+  }
+
+  .skill-card .skill-desc {
+    font-size: 0.45rem;
+    line-height: 1.1;
+  }
+
+  .skill-card .status-tag {
+    font-size: 0.4rem;
+    padding: 1px 3px;
+  }
+}
+
 .skill-card {
   position: relative;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 4px;
   transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
   cursor: pointer;
-  min-height: 156px;
+  height: 90px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .skill-card header {
@@ -519,53 +593,165 @@ button.secondary:hover {
   }
 
   .players-banner {
-    flex-direction: column;
+    flex-direction: row;
+    gap: 8px;
   }
 
   .player-card {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
   }
 }
 
 @media (max-width: 720px) {
   .app-shell {
-    padding: calc(18px + env(safe-area-inset-top, 0px)) 16px calc(48px + env(safe-area-inset-bottom, 0px));
-    gap: 16px;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    gap: 8px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .tagline {
+    display: none;
   }
 
   .game-summary {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .summary-card {
+    padding: 8px 6px;
+  }
+
+  .summary-card .label {
+    font-size: 0.7rem;
+  }
+
+  .summary-card strong {
+    font-size: 1rem;
   }
 
   .room-share {
     width: 100%;
     justify-content: space-between;
-    padding: 10px 12px;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+
+  .turn-banner {
+    padding: 6px 10px;
+  }
+
+  .turn-banner p {
+    font-size: 0.8rem;
+  }
+
+  .board-section {
+    width: 100%;
+    max-width: none;
+    padding: 12px;
+  }
+
+  .board-stage {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   .board-controls {
-    flex-direction: column;
+    flex-direction: row;
     width: 100%;
+    gap: 8px;
   }
 
   button,
   button.secondary {
-    width: 100%;
-    text-align: center;
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 0.85rem;
   }
 
   .skills-panel {
-    padding: 18px;
+    padding: 4px;
+    margin-top: 4px;
+    flex-shrink: 0;
+    max-height: 35vh;
+    overflow-y: auto;
+  }
+
+  .skills-panel h2 {
+    font-size: 1.2rem;
+  }
+
+  .skills-hint {
+    font-size: 0.8rem;
   }
 
   .skill-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .skill-card {
+    padding: 5px;
+    height: 60px;
+  }
+
+  .skill-name {
+    font-size: 0.6rem;
+  }
+
+  .cooldown {
+    font-size: 0.55rem;
+  }
+
+  .skill-desc {
+    font-size: 0.55rem;
+    line-height: 1.2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  .status-tag {
+    font-size: 0.5rem;
+    padding: 1px 4px;
+  }
+
+  .player-card {
+    padding: 8px 12px;
+  }
+
+  .player-card .stone {
+    width: 28px;
+    height: 28px;
+  }
+
+  .player-card .name {
+    font-size: 0.8rem;
+  }
+
+  .player-card .turn-indicator {
+    font-size: 0.7rem;
   }
 
   .toast {
     left: 50%;
     right: auto;
     transform: translate(-50%, 60%);
+    min-width: 200px;
+    max-width: 280px;
+    font-size: 0.85rem;
   }
 
   .toast.visible {
@@ -574,22 +760,108 @@ button.secondary:hover {
 }
 
 @media (max-width: 460px) {
-  .summary-card {
-    text-align: left;
+  .app-shell {
+    padding: calc(6px + env(safe-area-inset-top, 0px)) 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    gap: 6px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 
-  .room-share {
+  .app-header {
     flex-direction: column;
-    align-items: flex-start;
     gap: 8px;
   }
 
+  .app-header h1 {
+    font-size: 1.3rem;
+  }
+
+  .summary-card {
+    text-align: center;
+    padding: 6px 4px;
+  }
+
+  .summary-card .label {
+    font-size: 0.65rem;
+  }
+
+  .summary-card strong {
+    font-size: 0.9rem;
+  }
+
+  .room-share {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
   .turn-banner {
-    text-align: left;
+    text-align: center;
+    padding: 5px 8px;
+  }
+
+  .turn-banner p {
+    font-size: 0.75rem;
+  }
+
+  .board-section {
+    width: min(300px, 85vw);
+    padding: 12px;
+  }
+
+  .skill-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+
+  .skill-card {
+    height: 55px;
+    padding: 4px;
+  }
+
+  .skill-name {
+    font-size: 0.55rem;
+  }
+
+  .skill-desc {
+    font-size: 0.5rem;
+    -webkit-line-clamp: 2;
+    line-height: 1.1;
   }
 
   .skills-panel-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 4px;
+  }
+
+  .skills-panel h2 {
+    font-size: 1rem;
+  }
+
+  .skills-hint {
+    font-size: 0.75rem;
+  }
+
+  .player-card {
+    padding: 6px 8px;
+  }
+
+  .player-card .stone {
+    width: 24px;
+    height: 24px;
+  }
+
+  .player-card .name {
+    font-size: 0.7rem;
+  }
+
+  .player-card .turn-indicator {
+    font-size: 0.65rem;
   }
 }

@@ -1,5 +1,5 @@
 ﻿const BOARD_SIZE = 15;
-const BOARD_PADDING = 28;
+const BOARD_PADDING = 12;
 const STAR_POINTS = [
   [3, 3],
   [3, 11],
